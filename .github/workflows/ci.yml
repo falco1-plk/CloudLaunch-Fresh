@@ -1,4 +1,4 @@
-name: CloudLaunch CI/CD Pipeline
+name: CloudLaunch CI/CD
 
 on:
   push:
@@ -10,23 +10,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
       - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@v0.1.6
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
+          host: 3.109.32.121
+          username: ubuntu
           key: ${{ secrets.EC2_KEY }}
           script: |
-            cd cloudlaunch
+            if [ ! -d "CloudLaunch-Fresh" ]; then
+              git clone https://github.com/falco1-plk/CloudLaunch-Fresh.git
+            fi
 
+            cd CloudLaunch-Fresh
             git pull origin main
 
-            docker stop $(docker ps -q) || true
-            docker rm $(docker ps -aq) || true
+            sudo docker stop cloudlaunch-container || true
+            sudo docker rm cloudlaunch-container || true
 
-            docker build -t cloudlaunch-app .
+            sudo docker build -t cloudlaunch .
 
-            docker run -d -p 3000:3000 cloudlaunch-app
+            sudo docker run -d -p 4000:3000 --name cloudlaunch-container cloudlaunch
