@@ -1,110 +1,130 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>DevOps Control Panel</title>
+<title>🚀 DevOps Panel</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body {
     margin:0;
-    font-family: 'Segoe UI', sans-serif;
-    background: linear-gradient(135deg,#020617,#1e293b);
+    font-family: 'Segoe UI';
+    background: linear-gradient(135deg,#020617,#0f172a);
     color:white;
     text-align:center;
 }
 
+/* HEADER */
 h1 {
-    margin-top:40px;
-    color:#22d3ee;
+    margin-top:30px;
+    font-size:40px;
+    color:#38bdf8;
 }
 
-.status {
-    margin:20px;
-    font-size:18px;
-}
-
-.running { color:#22c55e; }
-.stopped { color:#ef4444; }
-
-button {
-    padding:14px 30px;
+/* BUTTONS */
+.btn {
+    padding:12px 25px;
     margin:10px;
     border:none;
-    border-radius:10px;
+    border-radius:12px;
     font-size:16px;
     cursor:pointer;
+    transition:0.3s;
 }
 
+/* COLORS */
 .start { background:#22c55e; }
 .stop { background:#ef4444; }
 .restart { background:#3b82f6; }
 .deploy { background:#f59e0b; }
 
-.logs {
+/* HOVER */
+.btn:hover {
+    transform:scale(1.1);
+    box-shadow:0 0 20px rgba(255,255,255,0.4);
+}
+
+/* LOG BOX */
+.box {
     width:80%;
-    height:300px;
-    margin:40px auto;
-    background:black;
-    color:#00ff88;
+    margin:20px auto;
+    background:#020617;
+    border-radius:15px;
     padding:20px;
-    border-radius:10px;
-    text-align:left;
-    overflow:auto;
+}
+
+/* TEXT */
+.logs {
+    color:#00ff88;
     font-family:monospace;
+    height:150px;
+    overflow:auto;
+}
+
+/* STATUS */
+.status {
+    margin-top:10px;
+    padding:8px 20px;
+    background:#334155;
+    border-radius:20px;
+}
+
+/* GRID */
+.grid {
+    display:flex;
+    justify-content:center;
+    gap:20px;
+    flex-wrap:wrap;
+}
+.card {
+    background:#0f172a;
+    padding:20px;
+    border-radius:12px;
 }
 </style>
 
 <script>
-function action(cmd){
-    fetch("/"+cmd).then(()=>loadAll());
+function action(type){
+    document.getElementById("status").innerText = "⏳ Processing...";
+    fetch("/"+type).then(()=>load());
 }
 
-function loadLogs(){
-    fetch("/logs")
-    .then(res=>res.text())
-    .then(data=>{
-        document.getElementById("logs").innerText=data;
+function load(){
+    fetch("/logs").then(r=>r.text()).then(d=>{
+        document.getElementById("logs").innerText=d;
+    });
+
+    fetch("/status").then(r=>r.text()).then(d=>{
+        document.getElementById("status").innerText="📦 "+d;
     });
 }
 
-function loadStatus(){
-    fetch("/status")
-    .then(res=>res.text())
-    .then(data=>{
-        let el = document.getElementById("status");
-        if(data.includes("Up")){
-            el.innerText = "Running";
-            el.className = "status running";
-        } else {
-            el.innerText = "Stopped";
-            el.className = "status stopped";
-        }
-    });
-}
-
-function loadAll(){
-    loadLogs();
-    loadStatus();
-}
-
-setInterval(loadAll,2000);
+setInterval(load,2000);
 </script>
 
 </head>
 
-<body onload="loadAll()">
+<body onload="load()">
 
-<h1>DevOps Control Panel</h1>
-
-<div id="status" class="status">Checking...</div>
+<h1>🚀 DevOps Control Panel</h1>
 
 <div>
-    <button class="start" onclick="action('start')">Start</button>
-    <button class="stop" onclick="action('stop')">Stop</button>
-    <button class="restart" onclick="action('restart')">Restart</button>
-    <button class="deploy" onclick="action('deploy')">Deploy</button>
+<button class="btn start" onclick="action('start')">▶️ Start</button>
+<button class="btn stop" onclick="action('stop')">⛔ Stop</button>
+<button class="btn restart" onclick="action('restart')">🔄 Restart</button>
+<button class="btn deploy" onclick="action('deploy')">🚀 Deploy</button>
 </div>
 
-<div id="logs" class="logs">Loading logs...</div>
+<div id="status" class="status">System Ready</div>
+
+<div class="grid">
+
+<div class="card">
+<h3>📜 Logs</h3>
+<div id="logs" class="logs">Loading...</div>
+</div>
+
+</div>
 
 </body>
 </html>

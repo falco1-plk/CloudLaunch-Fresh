@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login</title>
+
+<style>
+body {
+    background:#020617;
+    color:white;
+    font-family:sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.box {
+    background:#0f172a;
+    padding:40px;
+    border-radius:12px;
+    text-align:center;
+}
+
+input {
+    display:block;
+    margin:10px auto;
+    padding:10px;
+    width:200px;
+    border:none;
+    border-radius:5px;
+}
+
+button {
+    padding:10px 20px;
+    background:#22c55e;
+    border:none;
+    border-radius:6px;
+    color:white;
+}
+</style>
+
+<script>
+function login(){
+    const user = document.getElementById("user").value;
+    const pass = document.getElementById("pass").value;
+
+    fetch("/login", {
+        method:"POST",
+        headers:{"Content-Type":"application/x-www-form-urlencoded"},
+        body:`user=${user}&pass=${pass}`
+    })
+    .then(res=>res.text())
+    .then(data=>{
+        if(data==="success"){
+            window.location="/admin";
+        } else {
+            alert("Invalid login");
+        }
+    });
+}
+</script>
+
+</head>
+
+<body>
+
+<div class="box">
+<h2>🔐 Admin Login</h2>
+
+<input id="user" placeholder="Username">
+<input id="pass" type="password" placeholder="Password">
+
+<button onclick="login()">Login</button>
+</div>
+
+</body>
+</html>

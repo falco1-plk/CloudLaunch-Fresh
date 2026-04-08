@@ -4,61 +4,97 @@ const fs = require('fs');
 const path = require('path');
 
 let logs = "System Ready...\n";
+let loggedIn = false;
 
-function runCommand(cmd, res) {
-    exec(cmd, (error, stdout, stderr) => {
-        if (error) {
-            logs += "ERROR: " + stderr + "\n";
+// Run command
+function run(cmd, res) {
+    exec(cmd, (err, out, stderr) => {
+        if (err) {
+            logs += "❌ ERROR:\n" + stderr + "\n";
         } else {
-            logs += stdout + "\n";
+            logs += "✅ SUCCESS:\n" + out + "\n";
         }
-        res.end("OK");
+        res.end("done");
+    });
+}
+// Status
+function status(res) {
+    exec("docker ps --filter name=cloudlaunch-app --format '{{.Status}}'", (err, out) => {
+        res.end(out || "Stopped");
     });
 }
 
-function getStatus(res) {
-    exec("docker ps --filter name=cloudlaunch-app --format '{{.Status}}'", (err, stdout) => {
-        res.end(stdout || "Stopped");
-    });
+// Stats
+function stats(res) {
+    exec("docker stats --no-stream --format '{{.Name}} | CPU: {{.CPUPerc}} | MEM: {{.MemUsage}}'", 
+    (err, out) => res.end(out));
 }
 
-const server = http.createServer((req, res) => {
+http.createServer((req, res) => {
 
     if (req.url === "/") {
         fs.createReadStream(path.join(__dirname, "public/dashboard.html")).pipe(res);
     }
 
-    else if (req.url === "/admin") {
+   else if (req.url === "/admin") {
+    if (!loggedIn) {
+        fs.createReadStream(path.join(__dirname, "public/login.html")).pipe(res);
+    } else {
         fs.createReadStream(path.join(__dirname, "public/admin.html")).pipe(res);
+    }
+}
+
+    else if (req.url === "/login" && req.method === "POST") {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+
+        req.on('end', () => {
+            const data = new URLSearchParams(body);
+            if (data.get("user") === "admin" && data.get("pass") === "1234") {
+                loggedIn = true;
+                res.end("success");
+            } else {
+                res.end("fail");
+            }
+        });
     }
 
     else if (req.url === "/start") {
-        runCommand("docker start cloudlaunch-app || docker run -d -p 4000:80 --name cloudlaunch-app nginx", res);
+        run("docker start cloudlaunch-app || docker run -d -p 4000:80 --name cloudlaunch-app cloudlaunch-app", res);
     }
 
     else if (req.url === "/stop") {
-        runCommand("docker stop cloudlaunch-app", res);
+        run("docker stop cloudlaunch-app", res);
     }
 
     else if (req.url === "/restart") {
-        runCommand("docker restart cloudlaunch-app", res);
+        run("docker restart cloudlaunch-app", res);
     }
 
-    else if (req.url === "/deploy") {
-        runCommand("docker rm -f cloudlaunch-app && docker run -d -p 4000:80 --name cloudlaunch-app nginx", res);
-    }
-
-    else if (req.url === "/status") {
-        getStatus(res);
-    }
+   else if (req.url === "/deploy") {
+    run(`
+    docker rm -f cloudlaunch-app || true &&
+    docker build -t cloudlaunch-app . &&
+    docker run -d -p 4000:80 --name cloudlaunch-app cloudlaunch-app
+    `, res);
+}
 
     else if (req.url === "/logs") {
         res.end(logs);
     }
 
+    else if (req.url === "/status") {
+        status(res);
+    }
+
+    else if (req.url === "/stats") {
+        stats(res);
+    }
+
     else {
         res.end("404");
     }
-});
 
-server.listen(3000, () => console.log("Server running on port 3000"));
+}).listen(3000);
+
+console.log("Server running on port 3000");
