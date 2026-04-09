@@ -23,7 +23,6 @@ body {
     transition:0.3s;
 }
 
-/* LOADER */
 .loader {
     position:fixed;
     width:100%;
@@ -37,7 +36,6 @@ body {
     z-index:999;
 }
 
-/* SIDEBAR */
 .sidebar {
     width:80px;
     background:#10b981;
@@ -48,17 +46,14 @@ body {
     padding-top:20px;
     color:white;
 }
+
 .sidebar div {
     margin:20px;
     cursor:pointer;
     font-size:20px;
 }
 
-/* MAIN */
-.main {
-    flex:1;
-    padding:20px;
-}
+.main { flex:1; padding:20px; }
 
 .card {
     background:white;
@@ -66,12 +61,6 @@ body {
     border-radius:15px;
     box-shadow:0 5px 20px rgba(0,0,0,0.1);
     margin-top:20px;
-    animation:fade 0.5s;
-}
-
-@keyframes fade {
-    from {opacity:0; transform:translateY(10px);}
-    to {opacity:1;}
 }
 
 button {
@@ -83,21 +72,11 @@ button {
     cursor:pointer;
 }
 
-button:hover {
-    transform:scale(1.05);
-}
-
 .section { display:none; }
 .active { display:block; }
 
-/* DARK MODE */
-.dark {
-    background:#0f172a;
-    color:white;
-}
-.dark .card {
-    background:#1e293b;
-}
+.dark { background:#0f172a; color:white; }
+.dark .card { background:#1e293b; }
 
 video {
     width:600px;
@@ -117,39 +96,34 @@ let stream = null;
 let detector;
 let modelsLoaded = false;
 
-/* LOADER */
 window.onload = () => {
     initChart();
 
     setTimeout(()=>{
         document.getElementById("loader").style.display="none";
-
         let saved = JSON.parse(localStorage.getItem("bmiData") || "[]");
         chart.data.datasets[0].data = saved;
         chart.update();
     },1500);
 };
 
-/* NAV */
 function showSection(id){
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
 }
 
-/* DARK MODE */
 function toggleTheme(){
     document.body.classList.toggle("dark");
     let btn = document.getElementById("themeBtn");
     btn.innerText = document.body.classList.contains("dark") ? "☀️" : "🌙";
 }
 
-/* VOICE */
 function speak(text){
     let speech = new SpeechSynthesisUtterance(text);
     window.speechSynthesis.speak(speech);
 }
 
-/* BMI */
+/* ✅ UPDATED BMI FUNCTION */
 function calcBMI(){
     let h = document.getElementById("h").value;
     let w = document.getElementById("w").value;
@@ -162,13 +136,23 @@ function calcBMI(){
     document.getElementById("res").innerText =
     "BMI: " + bmi.toFixed(2);
 
-    speak("Your BMI is " + bmi.toFixed(2));
+    let status = bmi < 25 ? "Healthy ✅" : "Needs Attention ⚠️";
+
+    let targetWeight = 24.9 * (heightM * heightM);
+    let weightDiff = (w - targetWeight).toFixed(1);
 
     document.getElementById("healthAdvice").innerText =
-    "Condition: " + (bmi<25 ? "Healthy ✅" : "Needs Attention ⚠️");
+    "Condition: " + status + " | As per BMI: " + bmi.toFixed(2);
 
-    document.getElementById("dietPlan").innerText =
-    "Eat balanced diet & stay active";
+    if(bmi >= 25){
+        document.getElementById("dietPlan").innerText =
+        "You should lose approx " + weightDiff + " kg ⚡";
+        speak("You need to lose " + weightDiff + " kg to reach ideal BMI");
+    } else {
+        document.getElementById("dietPlan").innerText =
+        "Maintain your current lifestyle 👍";
+        speak("Your BMI is healthy");
+    }
 
     document.getElementById("calorie").innerText =
     "🔥 Calories: " + calories;
@@ -186,7 +170,6 @@ function calcBMI(){
     localStorage.setItem("bmiData", JSON.stringify(chart.data.datasets[0].data));
 }
 
-/* GRAPH */
 function initChart(){
     const ctx = document.getElementById('chart');
     chart = new Chart(ctx, {
@@ -205,15 +188,25 @@ function initChart(){
     });
 }
 
-/* CAMERA FIXED */
+/* ✅ CAMERA FIX */
 async function startCamera(){
     try{
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+            alert("Camera not supported ❌");
+            return;
+        }
+
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user" }
+        });
+
         let video = document.getElementById("video");
         video.srcObject = stream;
         await video.play();
+
     } catch(err){
-        alert("Camera blocked ❌ Allow permission");
+        alert("Camera blocked ❌ Use HTTPS or localhost");
+        console.error(err);
     }
 }
 
@@ -279,7 +272,7 @@ function stopCamera(){
 
 <body>
 
-<div id="loader" class="loader"> Loading  System...</div>
+<div id="loader" class="loader"> Loading System...</div>
 
 <div class="sidebar">
 <div onclick="showSection('home')">🏠</div>
