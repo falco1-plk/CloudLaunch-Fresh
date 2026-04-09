@@ -1,4 +1,4 @@
-name: CloudLaunch CI/CD
+name: CloudLaunch CI/CD Pipeline
 
 on:
   push:
@@ -16,17 +16,24 @@ jobs:
           host: 3.109.32.121
           username: ubuntu
           key: ${{ secrets.EC2_KEY }}
+
           script: |
+            # Clone repo if not exists
             if [ ! -d "CloudLaunch-Fresh" ]; then
               git clone https://github.com/falco1-plk/CloudLaunch-Fresh.git
             fi
 
+            # Go to project folder
             cd CloudLaunch-Fresh
+
+            # Pull latest code
             git pull origin main
 
-            sudo docker stop cloudlaunch-container || true
-            sudo docker rm cloudlaunch-container || true
+            # Stop and remove old container
+            sudo docker rm -f cloudlaunch-container || true
 
+            # Build new image
             sudo docker build -t cloudlaunch .
 
-            sudo docker run -d -p 4000:3000 --name cloudlaunch-container cloudlaunch
+            # Run container
+            sudo docker run -d -p 4000:80 --name cloudlaunch-container cloudlaunch
