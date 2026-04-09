@@ -48,7 +48,6 @@ body {
     padding-top:20px;
     color:white;
 }
-
 .sidebar div {
     margin:20px;
     cursor:pointer;
@@ -75,17 +74,6 @@ body {
     to {opacity:1;}
 }
 
-/* BMI FLEX */
-.bmi-container {
-    display:flex;
-    gap:20px;
-}
-
-/* RIGHT PANEL */
-.info-card {
-    background:#ecfdf5;
-}
-
 button {
     padding:10px 20px;
     border:none;
@@ -110,9 +98,6 @@ button:hover {
 .dark .card {
     background:#1e293b;
 }
-.dark .info-card {
-    background:#334155;
-}
 
 video {
     width:600px;
@@ -128,7 +113,6 @@ video {
 
 <script>
 let chart;
-let totalScans = 0;
 let stream = null;
 let detector;
 let modelsLoaded = false;
@@ -152,6 +136,13 @@ function showSection(id){
     document.getElementById(id).classList.add('active');
 }
 
+/* DARK MODE */
+function toggleTheme(){
+    document.body.classList.toggle("dark");
+    let btn = document.getElementById("themeBtn");
+    btn.innerText = document.body.classList.contains("dark") ? "☀️" : "🌙";
+}
+
 /* VOICE */
 function speak(text){
     let speech = new SpeechSynthesisUtterance(text);
@@ -173,9 +164,11 @@ function calcBMI(){
 
     speak("Your BMI is " + bmi.toFixed(2));
 
-    totalScans++;
-    document.getElementById("totalScans").innerText = totalScans;
-    document.getElementById("lastBMI").innerText = bmi.toFixed(2);
+    document.getElementById("healthAdvice").innerText =
+    "Condition: " + (bmi<25 ? "Healthy ✅" : "Needs Attention ⚠️");
+
+    document.getElementById("dietPlan").innerText =
+    "Eat balanced diet & stay active";
 
     document.getElementById("calorie").innerText =
     "🔥 Calories: " + calories;
@@ -191,12 +184,9 @@ function calcBMI(){
     chart.update();
 
     localStorage.setItem("bmiData", JSON.stringify(chart.data.datasets[0].data));
-
-    document.getElementById("aiAdvice").innerText =
-    "AI Suggestion: Stay active + balanced diet";
 }
 
-/* CHART */
+/* GRAPH */
 function initChart(){
     const ctx = document.getElementById('chart');
     chart = new Chart(ctx, {
@@ -215,33 +205,23 @@ function initChart(){
     });
 }
 
-/* DARK MODE BUTTON FIX */
-function toggleTheme(){
-    document.body.classList.toggle("dark");
-
-    let btn = document.getElementById("themeBtn");
-
-    if(document.body.classList.contains("dark")){
-        btn.innerText = "☀️";
-    } else {
-        btn.innerText = "🌙";
+/* CAMERA FIXED */
+async function startCamera(){
+    try{
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        let video = document.getElementById("video");
+        video.srcObject = stream;
+        await video.play();
+    } catch(err){
+        alert("Camera blocked ❌ Allow permission");
     }
 }
 
-/* CAMERA */
-async function startCamera(){
-    stream = await navigator.mediaDevices.getUserMedia({video:true});
-    document.getElementById('video').srcObject = stream;
-}
-
-/* IMPROVED SCANNER (REAL + STABLE) */
 async function loadModels(){
     if(modelsLoaded) return;
-
     detector = await poseDetection.createDetector(
         poseDetection.SupportedModels.MoveNet
     );
-
     modelsLoaded = true;
 }
 
@@ -249,52 +229,48 @@ async function scan(){
     let result = document.getElementById("heightResult");
     let video = document.getElementById("video");
 
-    result.innerText = "Stabilizing...";
+    result.innerText = "Scanning...";
 
     await loadModels();
 
     let values = [];
-    let attempts = 0;
+    let count = 0;
 
-    let interval = setInterval(async () => {
-
+    let interval = setInterval(async ()=>{
         const poses = await detector.estimatePoses(video);
 
-        if(poses.length > 0){
+        if(poses.length>0){
             let kp = poses[0].keypoints;
 
-            let head = kp.find(p => p.name==="nose");
-            let ankle = kp.find(p => p.name==="left_ankle");
+            let head = kp.find(p=>p.name==="nose");
+            let ankle = kp.find(p=>p.name==="left_ankle");
 
             if(head && ankle){
                 let pixel = Math.abs(ankle.y - head.y);
-                let height = pixel * 0.75;
-                values.push(height);
+                values.push(pixel * 0.75);
             }
         }
 
-        attempts++;
+        count++;
 
-        if(attempts >= 5){
+        if(count>=5){
             clearInterval(interval);
 
-            if(values.length === 0){
+            if(values.length===0){
                 result.innerText = "Stand properly ❌";
                 return;
             }
 
             let avg = values.reduce((a,b)=>a+b)/values.length;
-
-            result.innerText =
-            "Height: " + avg.toFixed(1) + " cm 📏";
+            result.innerText = "Height: " + avg.toFixed(1) + " cm 📏";
         }
 
-    }, 500);
+    },400);
 }
 
 function stopCamera(){
     if(stream){
-        stream.getTracks().forEach(t => t.stop());
+        stream.getTracks().forEach(t=>t.stop());
     }
 }
 </script>
@@ -303,10 +279,12 @@ function stopCamera(){
 
 <body>
 
-<div id="loader" class="loader">🚀 Loading AI System...</div>
+<div id="loader" class="loader"> Loading  System...</div>
 
 <div class="sidebar">
 <div onclick="showSection('home')">🏠</div>
+<div onclick="showSection('health')">❤️</div>
+<div onclick="showSection('diet')">🍎</div>
 <div onclick="showSection('graph')">📊</div>
 <div onclick="showSection('camera')">📷</div>
 <div id="themeBtn" onclick="toggleTheme()">🌙</div>
@@ -314,12 +292,9 @@ function stopCamera(){
 
 <div class="main">
 
-<h1>🚀 AI HEALTH SYSTEM (FINAL)</h1>
+<h1> HEALTH SYSTEM DEMO L</h1>
 
 <div id="home" class="section active">
-
-<div class="bmi-container">
-
 <div class="card">
 <h2>BMI Calculator</h2>
 <input id="h" placeholder="Height (cm)"><br><br>
@@ -327,29 +302,28 @@ function stopCamera(){
 <button onclick="calcBMI()">Calculate</button>
 <div id="res"></div>
 </div>
+</div>
 
-<div class="card info-card">
-<h3>Health Insights</h3>
+<div id="health" class="section">
+<div class="card">
+<h2>❤️ Health</h2>
+<div id="healthAdvice"></div>
 <div id="calorie"></div>
 <div id="water"></div>
 <div id="protein"></div>
 </div>
-
 </div>
 
+<div id="diet" class="section">
 <div class="card">
-<h3>📊 Dashboard</h3>
-<p>Total Scans: <span id="totalScans">0</span></p>
-<p>Last BMI: <span id="lastBMI">-</span></p>
+<h2>🍎 Diet Plan</h2>
+<div id="dietPlan"></div>
 </div>
-
-<div id="aiAdvice" class="card"></div>
-
 </div>
 
 <div id="graph" class="section">
 <div class="card">
-<h2>📊 BMI Graph</h2>
+<h2>📊 Graph</h2>
 <canvas id="chart"></canvas>
 </div>
 </div>
@@ -357,15 +331,11 @@ function stopCamera(){
 <div id="camera" class="section">
 <div class="card">
 <h2>📷 Height Scanner</h2>
-
-<video id="video" autoplay></video><br><br>
-
+<video id="video" autoplay playsinline></video><br><br>
 <button onclick="startCamera()">Start</button>
 <button onclick="scan()">Scan</button>
 <button onclick="stopCamera()">Stop</button>
-
 <div id="heightResult" class="result"></div>
-
 </div>
 </div>
 
