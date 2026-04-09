@@ -284,7 +284,7 @@ async function detectNow(){
 
 <div class="main">
 
-<h1> Demo System</h1>
+<h1> FINAL DEMO WORKING </h1>
 
 <div id="home" class="section active">
 <div class="card">
