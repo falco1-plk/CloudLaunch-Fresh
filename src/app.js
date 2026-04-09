@@ -285,7 +285,7 @@ function stopCamera(){
 
 <div class="main">
 
-<h1> HEALTH SYSTEM DEMO L</h1>
+<h1> HEALTH SYSTEM DEMO </h1>
 
 <div id="home" class="section active">
 <div class="card">
